@@ -63,6 +63,14 @@ def main(host, port):
             tags=['currency conversion', 'currency exchange'],
             examples=['What is exchange rate between USD and GBP?'],
         )
+        ragskill = AgentSkill(
+            id='rag_search',
+            name='Document Retrieval',
+            description='Search through loaded documents for specific information',
+            tags=['documents', 'rag', 'retrieval'],
+            examples=['What do the specification for pain.001 message?'],
+        )
+
         agent_card = AgentCard(
             name='Analyst Agent',
             description='Helps with exchange rates for currencies',
@@ -71,7 +79,7 @@ def main(host, port):
             default_input_modes=AnalystAgent.SUPPORTED_CONTENT_TYPES,
             default_output_modes=AnalystAgent.SUPPORTED_CONTENT_TYPES,
             capabilities=capabilities,
-            skills=[skill],
+            skills=[ragskill,skill],
         )
 
 
