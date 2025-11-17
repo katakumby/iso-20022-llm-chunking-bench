@@ -62,20 +62,8 @@ sequenceDiagram
    cd samples/python/agents/langgraph
    ```
 
-2. Create an environment file with your API key:
+2. Copy .env.example into .env fill with your config
 
-   ```bash
-   If you're using a Google Gemini model (gemini-pro, etc.):
-   echo "GOOGLE_API_KEY=your_api_key_here" > .env
-  
-   
-   If you're using OpenAI or any compatible API (e.g., local LLM via Ollama, LM Studio, etc.):
-
-   echo "API_KEY=your_api_key_here" > .env  (not neccessary if have no api key)
-   echo "TOOL_LLM_URL=your_llm_url" > .env
-   echo "TOOL_LLM_NAME=your_llm_name" > .env
-
-   ```
 
 3. Run the agent:
 
@@ -87,7 +75,7 @@ sequenceDiagram
    uv run app --host 0.0.0.0 --port 8080
    ```
 
-4. In a separate terminal, run the test client:
+4. In a separate terminal, run the test client: #todo fix it
 
    ```bash
    uv run app/test_client.py

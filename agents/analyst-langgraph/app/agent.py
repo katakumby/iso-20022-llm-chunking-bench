@@ -14,6 +14,7 @@ from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel
 from typing import Annotated, TypedDict
 from langchain_ollama import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings
 # from langgraph import StateGraph, tool, ToolNode, ToolMessage
 from langchain_qdrant import QdrantVectorStore
 import os
@@ -21,46 +22,59 @@ from  langchain_core.tools.retriever import create_retriever_tool
 from os.path import join, dirname
 from dotenv import load_dotenv
 import qdrant_client
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
 memory = MemorySaver()
 dotenv_path = join(dirname(__file__), '../.env')
 
 load_dotenv(dotenv_path)
 
-embeddings_model = os.getenv('EMBEDDINGS_MODEL')
+# embeddings_model = os.getenv('EMBEDDINGS_MODEL')
 # class State(TypedDict):
 #     messages: Annotated[list, add_messages]
+langfuse = get_client()
+langfuse_handler = CallbackHandler()
+
+if langfuse.auth_check():
+    print("Langfuse client is authenticated and ready!")
+else:
+    print("Authentication failed. Please check your credentials and host.")
+
 client = qdrant_client.QdrantClient(
     os.getenv('QDRANT_API'),
-    # api_key=os.getenv('QDRANT_KEY'),, # For Qdrant Cloud, None for local instance
-    api_key="<qdrant-api-key>", # For Qdrant Cloud, None for local instance
+    api_key=os.getenv('QDRANT_API_KEY'), # For Qdrant Cloud, None for local instance
 )
 
 
 
 def create_retriever(collection_name):
-    vector_store = QdrantVectorStore(client=client, collection_name=collection_name,embedding=OllamaEmbeddings(model=embeddings_model))
+    vector_store = QdrantVectorStore(client=client, collection_name=collection_name,embedding=OpenAIEmbeddings(
+        model=os.getenv('EMBEDDINGS_MODEL'),
+        base_url=os.getenv('EMBEDDINGS_BASE_URL'),
+        api_key=os.getenv('EMBEDDINGS_API_KEY')
+    ))
     return vector_store.as_retriever()
 
-isoorg_retriver_tool = create_retriever_tool(
-    # create_retriever("ISO20022ORG"),
-    create_retriever("marker_markdownHeaderTextSplitter"),
-    "retriever_iso20022org_mdr",
-    "Search and return information about ISO20022 documents and their MDR (Message Definition Report), it messages specification from all domains.",
-)
+# isoorg_retriver_tool = create_retriever_tool(
+#     # create_retriever("ISO20022ORG"),
+#     create_retriever("marker_markdownHeaderTextSplitter"),
+#     "retriever_iso20022org_mdr",
+#     "Search and return information about ISO20022 documents and their MDR (Message Definition Report), it messages specification from all domains.",
+# )
 
 isobusiness_retriever_tool = create_retriever_tool(
     # create_retriever("ISO20022WEB_GENERAL"),
-    create_retriever("iso20022org_markdownHeaderTextSplitter"),
+    create_retriever("iso20022payments_markdownHeaderTextSplitter"),
     "retriever_iso20022_general",
     "Search and return information about business impact of ISO20022 / CBPR+ changes.",
 )
 
-techdoc_retriever_tool = create_retriever_tool(
-    # create_retriever("ISO20022_SYSTEM_DOCS"),
-    create_retriever("eventcatalog_markdownHeaderTextSplitter"),
-    "retriever_system_docs",
-    "Search and return documentation of ordering system",
-)
+# techdoc_retriever_tool = create_retriever_tool(
+#     # create_retriever("ISO20022_SYSTEM_DOCS"),
+#     create_retriever("eventcatalog_markdownHeaderTextSplitter"),
+#     "retriever_system_docs",
+#     "Search and return documentation of ordering system",
+# )
 
 @tool
 def get_exchange_rate(
@@ -144,9 +158,9 @@ class AnalystAgent:
         # "Your sole purpose is to use the 'get_exchange_rate' tool to answer questions about currency exchange rates. "
         "Your sole purpose is to use the following tools to answer questions:"
         " get_exchange_rate  - about currency exchange rates. "
-        " isoorg_retriver_tool  - about ISO20022 specification . "
+        # " isoorg_retriver_tool  - about ISO20022 specification . "
         " isobusiness_retriever_tool  - about ISO20022 business changes and impact. "
-        " techdoc_retriever_tool  - about ordering system specification. "
+        # " techdoc_retriever_tool  - about ordering system specification. "
         'If the user asks about anything other than: currency exchange rates conversion ISO20022 specification,  ISO20022 business changes and impact,  ordering system specification or exchange rates, '
         'politely state that you cannot help with that topic and can only assist with provided topics. '
         'Do not attempt to answer unrelated questions or use tools for other purposes.'
@@ -159,18 +173,18 @@ class AnalystAgent:
     )
 
     def __init__(self):
-        model_source = os.getenv('model_source', 'google')
-        if model_source == 'google':
-            self.model = ChatGoogleGenerativeAI(model='gemini-2.0-flash')
-        else:
-            self.model = ChatOpenAI(
-                model=os.getenv('TOOL_LLM_NAME'),
-                openai_api_key=os.getenv('API_KEY', 'EMPTY'),
-                openai_api_base=os.getenv('TOOL_LLM_URL'),
-                temperature=0,
-            )
+        self.model = ChatOpenAI(
+            model=os.getenv('LLM_MODEL'),
+            api_key=os.getenv('LLM_API_KEY', 'EMPTY'),
+            base_url=os.getenv('LLM_BASE_URL'),
+            temperature=0,
+        )
         # tools = [hf_retriever_tool, transformer_retriever_tool, search_tool]
-        self.tools = [get_exchange_rate,isoorg_retriver_tool,isobusiness_retriever_tool,techdoc_retriever_tool]
+        self.tools = [get_exchange_rate,
+                      # isoorg_retriver_tool,
+                      isobusiness_retriever_tool,
+                      # techdoc_retriever_tool
+                      ]
 
         self.graph = create_react_agent(
             self.model,
@@ -182,7 +196,18 @@ class AnalystAgent:
 
     async def stream(self, query, context_id) -> AsyncIterable[dict[str, Any]]:
         inputs = {'messages': [('user', query)]}
-        config = {'configurable': {'thread_id': context_id}}
+        config = {
+            'configurable': {
+                'thread_id': context_id,
+                'sessionId': context_id
+            },
+            "callbacks": [langfuse_handler],
+            "metadata": {
+                "sessionId": context_id,
+                "langfuse_session_id": context_id,
+                "langfuse_user_id": "123",
+            }
+        }
 
         for item in self.graph.stream(inputs, config, stream_mode='values'):
             message = item['messages'][-1]

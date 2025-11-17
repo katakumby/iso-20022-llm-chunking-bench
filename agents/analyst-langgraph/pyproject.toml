@@ -23,6 +23,8 @@ dependencies = [
     "langchain-ollama>=0.3.8",
     "langchain-community>=0.3.29",
     "langchain-experimental>=0.3.4",
+    "boto3>=1.40.74",
+    "langfuse>=3.10.0",
 ]
 
 [tool.hatch.build.targets.wheel]

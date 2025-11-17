@@ -1,0 +1,90 @@
+
+
+# How to
+
+
+Load, chunk, process and push documents into database
+
+Avaiable strategies:
+    - markdownHeaderTextSplitter
+    - unstructuredMarkdownLoaderSingle
+    - unstructuredMarkdownLoaderElements
+    - semanticChunker
+```powershell
+
+Set-Variable -Name "basedir" -Value "E:\\AI\\DocVec"
+
+#For ISO20022 Material isomarkitdown
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown" isomarkitdown markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown" isomarkitdown unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown" isomarkitdown unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown" isomarkitdown semanticChunker 500:30
+
+#For ISO20022 Material markitdown_plugin
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown_plugin" isomarkitdownplug markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown_plugin" isomarkitdownplug unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown_plugin" isomarkitdownplug unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\markitdown_plugin" isomarkitdownplug semanticChunker 500:30
+
+#For ISO20022 Material marker
+uv run .\RAG\chunk.py "${basedir}\\outputs\\marker" marker markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\marker" marker unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\marker" marker unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\marker" marker semanticChunker 500:30
+
+#For ISO20022 Web / Business
+uv run .\RAG\chunk.py "${basedir}\\outputs\\iso20022payments" iso20022payments markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\iso20022payments" iso20022payments unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\iso20022payments" iso20022payments unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\iso20022payments" iso20022payments semanticChunker 500:30
+
+#For EventCatalog
+uv run .\RAG\chunk.py "${basedir}\\outputs\\eventcatalog" eventcatalog markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\eventcatalog" eventcatalog unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\eventcatalog" eventcatalog unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk.py "${basedir}\\outputs\\eventcatalog" eventcatalog semanticChunker 500:30
+
+```
+# S3
+
+```powershell
+
+
+#For ISO20022 Material isomarkitdown
+uv run .\RAG\chunk_s3.py "markitdown" isomarkitdown markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk_s3.py "markitdown" isomarkitdown unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk_s3.py "markitdown" isomarkitdown unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk_s3.py "markitdown" isomarkitdown semanticChunker 500:30
+
+#For ISO20022 Material markitdown_plugin
+uv run .\RAG\chunk_s3.py "markitdown_plugin" isomarkitdownplug markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk_s3.py "markitdown_plugin" isomarkitdownplug unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk_s3.py "markitdown_plugin" isomarkitdownplug unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk_s3.py "markitdown_plugin" isomarkitdownplug semanticChunker 500:30
+
+#For ISO20022 Material marker
+uv run .\RAG\chunk_s3.py "marker" marker markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk_s3.py "marker" marker unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk_s3.py "marker" marker unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk_s3.py "marker" marker semanticChunker 500:30
+
+#For ISO20022 Web / Business
+uv run .\RAG\chunk_s3.py "iso20022payments" iso20022payments markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk_s3.py "iso20022payments" iso20022payments unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk_s3.py "iso20022payments" iso20022payments unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk_s3.py "iso20022payments" iso20022payments semanticChunker 500:30
+
+#For EventCatalog
+uv run .\RAG\chunk_s3.py "eventcatalog" eventcatalog markdownHeaderTextSplitter 500:30
+uv run .\RAG\chunk_s3.py "eventcatalog" eventcatalog unstructuredMarkdownLoaderSingle 500:30
+uv run .\RAG\chunk_s3.py "eventcatalog" eventcatalog unstructuredMarkdownLoaderElements 500:30
+uv run .\RAG\chunk_s3.py "eventcatalog" eventcatalog semanticChunker 500:30
+
+```
+
+
+#uv run .\RAG\chunk.py 'E:\\AI\\DocVec\\outputs\\markitdown_plugin\\' pain_markit semanticChunker 0:30
+
+
+# TODO's:
+- [ ] Migrate from local storage to S3 bucket 
