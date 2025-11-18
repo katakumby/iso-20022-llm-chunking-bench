@@ -24,6 +24,14 @@ from dotenv import load_dotenv
 import qdrant_client
 from langfuse import get_client
 from langfuse.langchain import CallbackHandler
+from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain_mcp_adapters.sessions import StdioConnection, SSEConnection, StreamableHttpConnection
+from mcp.client.streamable_http import streamablehttp_client
+import asyncio
+from langchain_core.tools import StructuredTool
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from typing import Any, Awaitable, Callable, List, Optional
+
 memory = MemorySaver()
 dotenv_path = join(dirname(__file__), '../.env')
 
@@ -142,6 +150,33 @@ def retrive_document(
     except ValueError:
         return {'error': 'Invalid JSON response from API.'}
 
+class MCPService:
+    async def _create_client(self, server_name: str, url: str) -> MultiServerMCPClient:
+        return MultiServerMCPClient({
+            server_name: {
+                "url": url,
+                "transport": "streamable_http",
+            }
+        })
+
+    async def _fetch_tools(self, client: MultiServerMCPClient):
+        try:
+            return await client.get_tools()
+        except Exception as e:
+            print(f"Error fetching tools: {e}")
+            return []
+
+    async def get_tools(self, server_name: str, url: str):
+        client = await self._create_client(server_name, url)
+        tools = await self._fetch_tools(client)
+        return [{"name": tool.name, "description": tool.description} for tool in tools]
+
+    def get_selected_tools(self):
+        async def get_mcp_tools():
+            client = await self._create_client("Confluence", os.getenv("ATLASSIAN_MCP_URL"))
+            tools = await self._fetch_tools(client)
+            return tools
+        return asyncio.run(get_mcp_tools())
 
 class ResponseFormat(BaseModel):
     """Respond to the user in this format."""
@@ -156,14 +191,14 @@ class AnalystAgent:
     SYSTEM_INSTRUCTION = (
         'You are a specialized assistant for currency conversions. '
         # "Your sole purpose is to use the 'get_exchange_rate' tool to answer questions about currency exchange rates. "
-        "Your sole purpose is to use the following tools to answer questions:"
-        " get_exchange_rate  - about currency exchange rates. "
-        # " isoorg_retriver_tool  - about ISO20022 specification . "
-        " isobusiness_retriever_tool  - about ISO20022 business changes and impact. "
-        # " techdoc_retriever_tool  - about ordering system specification. "
-        'If the user asks about anything other than: currency exchange rates conversion ISO20022 specification,  ISO20022 business changes and impact,  ordering system specification or exchange rates, '
-        'politely state that you cannot help with that topic and can only assist with provided topics. '
-        'Do not attempt to answer unrelated questions or use tools for other purposes.'
+        # "Your sole purpose is to use the following tools to answer questions:"
+        # " get_exchange_rate  - about currency exchange rates. "
+        # # " isoorg_retriver_tool  - about ISO20022 specification . "
+        # " isobusiness_retriever_tool  - about ISO20022 business changes and impact. "
+        # # " techdoc_retriever_tool  - about ordering system specification. "
+        # 'If the user asks about anything other than: currency exchange rates conversion ISO20022 specification,  ISO20022 business changes and impact,  ordering system specification or exchange rates, '
+        # 'politely state that you cannot help with that topic and can only assist with provided topics. '
+        # 'Do not attempt to answer unrelated questions or use tools for other purposes.'
     )
 
     FORMAT_INSTRUCTION = (
@@ -180,11 +215,15 @@ class AnalystAgent:
             temperature=0,
         )
         # tools = [hf_retriever_tool, transformer_retriever_tool, search_tool]
-        self.tools = [get_exchange_rate,
-                      # isoorg_retriver_tool,
-                      isobusiness_retriever_tool,
-                      # techdoc_retriever_tool
-                      ]
+        # self.tools = [get_exchange_rate,
+        #               # isoorg_retriver_tool,
+        #               isobusiness_retriever_tool,
+        #               # techdoc_retriever_tool
+        #               ]
+        self.mcp_service = MCPService()
+
+        # self.tools = self._load_mcp_tools()
+        self.tools = self.get_selected_tools() + [ get_exchange_rate, isobusiness_retriever_tool]
 
         self.graph = create_react_agent(
             self.model,
@@ -193,6 +232,33 @@ class AnalystAgent:
             prompt=self.SYSTEM_INSTRUCTION,
             response_format=(self.FORMAT_INSTRUCTION, ResponseFormat),
         )
+
+    def get_tools(self, server_name: str, url: str) -> List[dict]:
+        try:
+            return asyncio.run(self.mcp_service.get_tools(server_name, url))
+        except Exception as e:
+            print(f"Error in synchronous get_tools: {e}")
+            return []
+    def get_selected_tools(self) -> List[StructuredTool]:
+        try:
+            tools = self.mcp_service.get_selected_tools()
+            for tool in tools:
+                self._convert_to_sync_tool(tool)
+            return tools
+        except Exception as e:
+            print(f"Error in synchronous get_available_tools: {e}")
+            return []
+    def _convert_to_sync_tool(self, async_tool: StructuredTool) -> StructuredTool:
+        def sync_wrapper(coroutine: Callable[..., Awaitable[Any]]):
+            def wrapper(*args, **kwargs):
+                try:
+                    return asyncio.run(coroutine(*args, **kwargs))
+                except Exception as e:
+                    print(f"Error in synchronous wrapper for {async_tool.name}: {e}")
+                    return {"error": str(e)}
+            return wrapper
+        async_tool.func = sync_wrapper(async_tool.coroutine)
+        return async_tool
 
     async def stream(self, query, context_id) -> AsyncIterable[dict[str, Any]]:
         inputs = {'messages': [('user', query)]}

@@ -39,9 +39,27 @@ docker run --runtime nvidia --gpus all -v E:\AI\models:/root/.cache/huggingface 
 
 LLM (with tools):
 ```bash
-docker run --runtime nvidia --gpus all -v E:\AI\models:/root/.cache/huggingface --env "HUGGING_FACE_HUB_TOKEN=YOUR_TOKEN" -p 8000:8000 --ipc=host  vllm/vllm-openai:latest --model Qwen/Qwen3-Coder-30B-A3B-Instruct --enable-auto-tool-choice --tool-call-parser llama3_json
+docker run --runtime nvidia --gpus all -v E:\AI\models:/root/.cache/huggingface --env "HUGGING_FACE_HUB_TOKEN=YOUR_TOKEN" -p 8000:8000 --ipc=host  vllm/vllm-openai:latest --model Qwen/Qwen3-Coder-30B-A3B-Instruct --max-model-len 32768 --host 0.0.0.0 --port 8000  --enable-auto-tool-choice  --tool-call-parser qwen3_coder
 ```
+# MCP
 
+Atlassian MCP:
+```angular2html
+docker run --rm -i -p 9001:9000 --env-file ENV_FILEPATH ghcr.io/sooperset/mcp-atlassian:latest --transport streamable-http --port 9000 -vv
+```
+Inspector: https://github.com/modelcontextprotocol/inspector
+
+Source: https://github.com/sooperset/mcp-atlassian
+
+```bash
+
+docker run --rm -i -p 8080:8080 -v "${HOME}/.mcp-atlassian:/home/app/.mcp-atlassian" ghcr.io/sooperset/mcp-atlassian:latest --oauth-setup -v
+  
+docker run --rm -i \
+  -p 8080:8080 \
+  -v "${HOME}/.mcp-atlassian:/home/app/.mcp-atlassian" \
+  ghcr.io/sooperset/mcp-atlassian:latest --oauth-setup -v
+```
 # Run Agent(s)
 
 Check [README.md](analyst-langgraph/README.md)
