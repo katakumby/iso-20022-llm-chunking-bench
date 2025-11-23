@@ -95,6 +95,7 @@ Agent can also be built using a container file.
 
     ```bash
     podman build . -t langgraph-a2a-server
+    docker build . -t langgraph-a2a-server
     ```
 
 > [!Tip]  
