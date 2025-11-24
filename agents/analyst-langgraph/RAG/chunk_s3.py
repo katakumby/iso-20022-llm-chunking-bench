@@ -5,7 +5,7 @@ from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
 # from langchain_text_splitters.markdown import HeaderType
 # from langchain_text_splitters.markdown import HeaderType
 # from langchain_text_splitters.markdown import ExperimentalMarkdownSyntaxTextSplitter
-from langchain.text_splitter import MarkdownTextSplitter
+from langchain_text_splitters import MarkdownTextSplitter
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -53,7 +53,21 @@ embeddings = OpenAIEmbeddings(
         base_url=os.getenv('EMBEDDINGS_BASE_URL'),
         api_key=os.getenv('EMBEDDINGS_API_KEY')
     )
+aws_key = os.getenv('S3_AKID') or os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret = os.getenv('S3_SK') or os.getenv('AWS_SECRET_ACCESS_KEY')
+aws_region = os.getenv('AWS_REGION') or os.getenv('S3_REGION') or "eu-north-1"
+s3_endpoint = os.getenv('S3_ENDPOINT')  # optional for S3-compatible services
 
+if not aws_key or not aws_secret:
+    raise RuntimeError(
+        "AWS credentials not found. Set `S3_AKID`/`S3_SK` or `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`, "
+        "or configure credentials via `aws configure`."
+    )
+session = boto3.Session(
+    aws_access_key_id=aws_key,
+    aws_secret_access_key=aws_secret,
+    region_name=aws_region,
+)
 
 def markdownHeaderTextSplitter(file,file_encoding = "utf8", headers_to_split_on = [
             ("#", "Header 1"),
@@ -127,7 +141,7 @@ def download_s3_object_to_variable(bucket_name: str, object_key: str):
     Downloads an S3 object and returns its contents as bytes.
     Works for any file type (text, binary, etc.).
     """
-    s3 = boto3.client("s3")
+    s3 = session.client("s3")
 
     response = s3.get_object(Bucket=bucket_name, Key=object_key)
 
@@ -140,13 +154,14 @@ def download_s3_object_to_variable(bucket_name: str, object_key: str):
         text = data.decode("windows-1252")
         return text
 
-client = boto3.client(
+
+client = session.client(
     's3',
     aws_access_key_id=os.getenv('S3_AKID'),
     aws_secret_access_key=os.getenv('S3_SK'),
     region_name="eu-north-1"
 )
-s3_resource = boto3.resource('s3')
+s3_resource = session.resource('s3')
 
 my_bucket = s3_resource.Bucket(os.getenv('S3_BUCKET'))
 

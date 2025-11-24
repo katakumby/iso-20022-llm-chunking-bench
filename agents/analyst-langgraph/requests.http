@@ -1,0 +1,59 @@
+### POST embeddings to local LangGraph server
+POST http://192.168.1.17:8000/v1/embeddings
+Content-Type: application/json
+Authorization: Bearer 1234
+
+{
+  "input": "The food was delicious and the waiter...",
+  "model": "Qwen/Qwen3-Embedding-8B",
+  "encoding_format": "float"
+}
+
+### LLM Test
+
+POST http://localhost:10000
+Content-Type: application/json
+
+{
+    "id": "12113c25-b752-473f-977e-c9ad33cf4f56",
+    "jsonrpc": "2.0",
+    "method": "message/send",
+    "params": {
+        "message": {
+            "kind": "message",
+            "messageId": "120ec73f93024993becf954d03a672bc",
+            "parts": [
+                {
+                    "kind": "text",
+                    "text": "2+2=?"
+                }
+            ],
+            "role": "user"
+        }
+    }
+}
+### Currency exchange tool
+
+POST http://localhost:10000
+Content-Type: application/json
+
+{
+    "id": "12113c25-b752-473f-977e-c9ad33cf4f56",
+    "jsonrpc": "2.0",
+    "method": "message/send",
+    "params": {
+        "message": {
+            "kind": "message",
+            "messageId": "120ec73f93024993becf954d03a672bc",
+            "parts": [
+                {
+                    "kind": "text",
+                    "text": "how much is 10 USD in INR?"
+                }
+            ],
+            "role": "user"
+        }
+    }
+}
+
+###

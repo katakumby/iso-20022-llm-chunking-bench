@@ -44,7 +44,7 @@ docker run --runtime nvidia --gpus all -v E:\AI\models:/root/.cache/huggingface 
 # MCP
 
 Atlassian MCP:
-```angular2html
+```bash
 docker run --rm -i -p 9001:9000 --env-file ENV_FILEPATH ghcr.io/sooperset/mcp-atlassian:latest --transport streamable-http --port 9000 -vv
 ```
 Inspector: https://github.com/modelcontextprotocol/inspector

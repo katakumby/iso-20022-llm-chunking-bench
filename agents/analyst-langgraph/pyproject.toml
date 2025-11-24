@@ -27,6 +27,7 @@ dependencies = [
     "langfuse>=3.10.0",
     "langchain-mcp-adapters>=0.1.13",
     "asyncio>=4.0.0",
+    "langchain>=1.0.8",
 ]
 
 [tool.hatch.build.targets.wheel]

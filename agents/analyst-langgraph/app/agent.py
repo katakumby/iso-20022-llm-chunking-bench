@@ -56,10 +56,13 @@ client = qdrant_client.QdrantClient(
 
 
 def create_retriever(collection_name):
-    vector_store = QdrantVectorStore(client=client, collection_name=collection_name,embedding=OpenAIEmbeddings(
-        model=os.getenv('EMBEDDINGS_MODEL'),
-        base_url=os.getenv('EMBEDDINGS_BASE_URL'),
-        api_key=os.getenv('EMBEDDINGS_API_KEY')
+    vector_store = QdrantVectorStore(
+        client=client,
+        collection_name=collection_name,
+        embedding=OpenAIEmbeddings(
+            model=os.getenv('EMBEDDINGS_MODEL'),
+            base_url=os.getenv('EMBEDDINGS_BASE_URL'),
+            api_key=os.getenv('EMBEDDINGS_API_KEY')
     ))
     return vector_store.as_retriever()
 
@@ -83,6 +86,25 @@ isobusiness_retriever_tool = create_retriever_tool(
 #     "retriever_system_docs",
 #     "Search and return documentation of ordering system",
 # )
+@tool
+def isobusiness_retriever(query: str, top_k: int = 4, collection_name: str = "iso20022payments_markdownHeaderTextSplitter"):
+    """
+    Synchronous tool wrapper that queries Qdrant retriever and returns joined text.
+    Use this tool in the agent's tools list (replace any `isobusiness_retriever_tool`).
+    """
+    try:
+        retriever = create_retriever(collection_name)
+        # try common signatures
+        try:
+            docs = retriever.get_relevant_documents(query, k=top_k)
+        except TypeError:
+            try:
+                docs = retriever.get_relevant_documents(query, top_k=top_k)
+            except TypeError:
+                docs = retriever.get_relevant_documents(query)
+        return "\n\n".join(getattr(d, "page_content", str(d)) for d in docs)
+    except Exception as e:
+        return {"error": str(e)}
 
 @tool
 def get_exchange_rate(
@@ -189,7 +211,7 @@ class AnalystAgent:
     """AnalystAgent - a specialized assistant for analytical convesions."""
 
     SYSTEM_INSTRUCTION = (
-        'You are a specialized assistant for currency conversions. '
+        'You are a specialized assistant for deep research and analysis. '
         # "Your sole purpose is to use the 'get_exchange_rate' tool to answer questions about currency exchange rates. "
         # "Your sole purpose is to use the following tools to answer questions:"
         # " get_exchange_rate  - about currency exchange rates. "
@@ -223,7 +245,8 @@ class AnalystAgent:
         self.mcp_service = MCPService()
 
         # self.tools = self._load_mcp_tools()
-        self.tools = self.get_selected_tools() + [ get_exchange_rate, isobusiness_retriever_tool]
+        # self.tools = self.get_selected_tools() + [ get_exchange_rate, isobusiness_retriever_tool]
+        self.tools = self.get_selected_tools() + [ get_exchange_rate, isobusiness_retriever]
 
         self.graph = create_react_agent(
             self.model,
