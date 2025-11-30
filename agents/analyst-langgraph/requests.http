@@ -11,7 +11,7 @@ Authorization: Bearer 1234
 
 ### LLM Test
 
-POST http://localhost:10000
+POST http://analyst-agent.apps-crc.testing
 Content-Type: application/json
 
 {
@@ -34,7 +34,7 @@ Content-Type: application/json
 }
 ### Currency exchange tool
 
-POST http://localhost:10000
+POST http://analyst-agent.apps-crc.testing
 Content-Type: application/json
 
 {
@@ -49,6 +49,52 @@ Content-Type: application/json
                 {
                     "kind": "text",
                     "text": "how much is 10 USD in INR?"
+                }
+            ],
+            "role": "user"
+        }
+    }
+}
+### Confluence tool
+
+POST http://analyst-agent.apps-crc.testing
+Content-Type: application/json
+
+{
+    "id": "12113c25-b752-473f-977e-c9ad33cf4f56",
+    "jsonrpc": "2.0",
+    "method": "message/send",
+    "params": {
+        "message": {
+            "kind": "message",
+            "messageId": "120ec73f93024993becf954d03a672bc",
+            "parts": [
+                {
+                    "kind": "text",
+                    "text": "Show 10 confluence pages"
+                }
+            ],
+            "role": "user"
+        }
+    }
+}
+### Tools  list
+
+POST http://analyst-agent.apps-crc.testing
+Content-Type: application/json
+
+{
+    "id": "12113c25-b752-473f-977e-c9ad33cf4f56",
+    "jsonrpc": "2.0",
+    "method": "message/send",
+    "params": {
+        "message": {
+            "kind": "message",
+            "messageId": "120ec73f93024993becf954d03a672bc",
+            "parts": [
+                {
+                    "kind": "text",
+                    "text": "What tools can you use? "
                 }
             ],
             "role": "user"
