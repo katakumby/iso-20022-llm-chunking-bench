@@ -21,7 +21,7 @@ OR
 
 ```
 oc apply -f .\yaml\qdrant\qdrant-deployment.yaml -n qdrant
-oc apply -f .\yaml\qdrant\route-qdrant.yaml
+oc apply -f .\yaml\qdrant\route-qdrant.yaml -n qdrant
 ```
 
 ? oc label namespace ailab netpol-allow=ailab --overwrite
