@@ -141,7 +141,7 @@ def download_s3_object_to_variable(bucket_name: str, object_key: str):
     Downloads an S3 object and returns its contents as bytes.
     Works for any file type (text, binary, etc.).
     """
-    s3 = session.client("s3")
+    s3 = session.client("s3", endpoint_url=s3_endpoint)
 
     response = s3.get_object(Bucket=bucket_name, Key=object_key)
 
@@ -159,9 +159,9 @@ client = session.client(
     's3',
     aws_access_key_id=os.getenv('S3_AKID'),
     aws_secret_access_key=os.getenv('S3_SK'),
-    region_name="eu-north-1"
+    region_name=aws_region
 )
-s3_resource = session.resource('s3')
+s3_resource = session.resource('s3', endpoint_url=s3_endpoint)
 
 my_bucket = s3_resource.Bucket(os.getenv('S3_BUCKET'))
 
